@@ -1,103 +1,204 @@
-import Image from "next/image";
+// For App Router: app/user-inputs/page.tsx
+// For Pages Router: pages/user-inputs.tsx
 
-export default function Home() {
+'use client';
+
+import { useState, FormEvent } from 'react';
+
+export default function UserInputsPage() {
+  const [sentence, setSentence] = useState('');
+  const [integer1, setInteger1] = useState('');
+  const [integer2, setInteger2] = useState('');
+
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setImageSrc(null); // Clear previous image
+
+    const num1 = parseInt(integer1, 10);
+    const num2 = parseInt(integer2, 10);
+
+    if (isNaN(num1) || isNaN(num2)) {
+      setError('Please enter valid integer values.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5001/api/viz_heatmap', { // ADJUST YOUR API ENDPOINT URL
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          msg: sentence,
+          layer: num1,
+          head: num2,
+        }),
+      });
+
+      if (!response.ok) {
+        let errorMsg = `Error: ${response.status}`;
+        try {
+          const errorData = await response.json(); // Try to get error from backend
+          errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+          // Backend did not send JSON error, or other issue
+        }
+        throw new Error(errorMsg);
+      }
+
+      const imageBlob = await response.blob();
+      const imageUrl = URL.createObjectURL(imageBlob);
+      setImageSrc(imageUrl);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate image. Is the backend running?');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Style Objects (optional, but can make JSX cleaner) ---
+  const pageStyle = {
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+    maxWidth: '550px',
+    margin: '40px auto',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    background: '#f9f9f9',
+  };
+
+  const formStyle = {
+    display: 'flex',
+    flexDirection: 'column' as 'column', // Required for TypeScript
+    gap: '18px',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '6px',
+    fontWeight: 'bold' as 'bold',
+    color: '#333',
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '10px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    boxSizing: 'border-box' as 'border-box',
+    fontSize: '1rem',
+    backgroundColor: '#ffffff', 
+    color: '#333333',         
+  };
+
+  const buttonStyle = {
+    padding: '12px 18px',
+    backgroundColor: loading ? '#aaa' : '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    fontSize: '1rem',
+    fontWeight: 'bold' as 'bold',
+    transition: 'background-color 0.2s ease',
+  };
+
+  const errorStyle = {
+    color: '#D8000C', // Dark red
+    backgroundColor: '#FFD2D2', // Light red
+    border: '1px solid #D8000C',
+    padding: '10px',
+    borderRadius: '4px',
+    marginTop: '15px',
+    textAlign: 'center' as 'center',
+  };
+
+  const imageContainerStyle = {
+    marginTop: '25px',
+    textAlign: 'center' as 'center',
+  };
+
+  const imageStyle = {
+    maxWidth: '100%',
+    height: 'auto',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    marginTop: '10px',
+  };
+  // --- End Style Objects ---
+
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div style={pageStyle}>
+      <h1 style={{ textAlign: 'center', color: '#2c3e50', marginBottom: '25px' }}>Image Generator</h1>
+      <form onSubmit={handleSubmit} style={formStyle}>
+        <div>
+          <label htmlFor="sentence" style={labelStyle}>Sentence:</label>
+          <input
+            type="text"
+            id="sentence"
+            value={sentence}
+            onChange={(e) => setSentence(e.target.value)}
+            placeholder="Enter your sentence here"
+            required
+            disabled={loading}
+            style={inputStyle}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+        <div>
+          <label htmlFor="integer1" style={labelStyle}>Layer (Integer):</label>
+          <input
+            type="number"
+            id="integer1"
+            value={integer1}
+            onChange={(e) => setInteger1(e.target.value)}
+            placeholder="e.g., 0"
+            required
+            disabled={loading}
+            style={inputStyle}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        </div>
+        <div>
+          <label htmlFor="integer2" style={labelStyle}>Head (Integer):</label>
+          <input
+            type="number"
+            id="integer2"
+            value={integer2}
+            onChange={(e) => setInteger2(e.target.value)}
+            placeholder="e.g., 0"
+            required
+            disabled={loading}
+            style={inputStyle}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          style={buttonStyle}
+          onMouseOver={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#0056b3'; }}
+          onMouseOut={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#007bff'; }}
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          {loading ? 'Generating...' : 'Generate Image'}
+        </button>
+      </form>
+
+      {error && <p style={errorStyle}>Error: {error}</p>}
+
+      {imageSrc && (
+        <div style={imageContainerStyle}>
+          <h2 style={{ color: '#2c3e50', marginBottom: '10px' }}>Generated Image:</h2>
+          <img src={imageSrc} alt="Generated by backend" style={imageStyle} />
+        </div>
+      )}
     </div>
   );
 }
